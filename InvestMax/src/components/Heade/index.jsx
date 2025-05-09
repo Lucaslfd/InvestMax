@@ -14,6 +14,20 @@ export default function Header() {
         navigate("/");
     }
 
+    const HandleNavigate = () => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+        const user = JSON.parse(storedUser);
+        console.log("Redirecionando com ID:", user._id);
+        navigate(`/edit-profile/${user._id}`);
+    } else {
+        alert("Erro: Usuário não encontrado!");
+        navigate("/login"); // redirecione para o login em vez de tentar usar user._id
+    }
+};
+
+
+
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
         if (storedUser) {
@@ -37,6 +51,8 @@ export default function Header() {
 <p>{user.nickname || user.name}</p>
                         </Logos_img>
                         <button onClick={handleLogout}>Sair</button>
+                        <button onClick={HandleNavigate}>Editar</button>
+
                     </Logos>
                 </Cabecalho>
             ) : (

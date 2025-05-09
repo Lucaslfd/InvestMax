@@ -8,7 +8,8 @@ const { OAuth2Client } = require("google-auth-library");
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: "*" }));
+
 
 mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
@@ -58,6 +59,38 @@ app.post("/register", async (req, res) => {
     }
 });
 
+app.get("/user/:id", async (req, res) => {
+    const { id } = req.params;
+    try {
+        const user = await User.findById(id);
+        if (!user) return res.status(404).json({ status: "error", message: "Usuário não encontrado" });
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ status: "error", message: "Erro ao buscar usuário" });
+    }
+});
+
+
+app.put("/edit-profile/:id", async (req, res) => {
+    const { id } = req.params;
+    console.log("ID recebido no backend:", id); // Depuração
+
+    try {
+        const user = await User.findById(id);
+        if (!user) {
+            console.log("Usuário não encontrado no banco de dados!"); // Depuração
+            return res.status(404).json({ status: "error", message: "Usuário não encontrado" });
+        }
+
+        res.json({ status: "success", message: "Perfil atualizado com sucesso!", user });
+    } catch (error) {
+        console.error("Erro ao editar perfil:", error);
+        res.status(500).json({ status: "error", message: "Erro ao editar perfil" });
+    }
+});
+
+
+
 app.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
@@ -77,6 +110,30 @@ app.post("/login", async (req, res) => {
         res.json({ status: "success", token, user });
     } catch (error) {
         res.status(500).json({ status: "error", message: "Erro ao fazer login" });
+    }
+});
+
+
+app.put("/edit-profile/:id", async (req, res) => {
+    const { id } = req.params;
+    const { nickname, email, password } = req.body;
+
+    try {
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ status: "error", message: "Usuário não encontrado" });
+        }
+
+        // Atualizar dados permitidos
+        if (nickname) user.nickname = nickname;
+        if (email) user.email = email;
+        if (password) user.password = await bcrypt.hash(password, 10); // Criptografar nova senha
+
+        await user.save(); // Salvar alterações no banco
+
+        res.json({ status: "success", message: "Perfil atualizado com sucesso!", user });
+    } catch (error) {
+        res.status(500).json({ status: "error", message: "Erro ao atualizar perfil" });
     }
 });
 

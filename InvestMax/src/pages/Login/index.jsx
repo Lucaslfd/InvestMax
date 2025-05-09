@@ -1,9 +1,13 @@
 import Heade from "../../components/Heade/";
-
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
+    const navigate = useNavigate()
     
     return (
-        <Heade/>
+        <div>
+            <Heade />
+            
+        </div>
     );
 }
