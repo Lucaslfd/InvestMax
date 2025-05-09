@@ -7,7 +7,7 @@ const RoutesApp = () => {
     return (
         <Routes>
             <Route path="/" element={ <SingIn/> }/>
-            <Route path="/registre-se" element={<SingUp/>} />
+            <Route path="/register" element={<SingUp/>} />
             <Route path="/profile" element={<Login/>} />
         </Routes>
     )
