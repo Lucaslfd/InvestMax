@@ -10,6 +10,18 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: "*" }));
 
+const multer = require("multer");
+const path = require("path");
+
+const storage = multer.diskStorage({
+    destination: "./uploads/",
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}_${file.originalname}`);
+    }
+});
+
+const upload = multer({ storage });
+
 
 mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
@@ -71,23 +83,49 @@ app.get("/user/:id", async (req, res) => {
 });
 
 
-app.put("/edit-profile/:id", async (req, res) => {
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+
+app.put("/edit-profile/:id", upload.single("picture"), async (req, res) => {
     const { id } = req.params;
-    console.log("ID recebido no backend:", id); // Depuração
+    const { nickname, email, password } = req.body;
+    const picture = req.file ? `/uploads/${req.file.filename}` : null;
+
+    console.log("🔎 Buscando usuário no banco com ID:", id);
 
     try {
         const user = await User.findById(id);
+        console.log("👤 Usuário encontrado antes da edição:", user);
+
         if (!user) {
-            console.log("Usuário não encontrado no banco de dados!"); // Depuração
+            console.log("❌ Usuário não encontrado no banco!");
             return res.status(404).json({ status: "error", message: "Usuário não encontrado" });
         }
 
+        if (nickname) user.nickname = nickname;
+        if (email) user.email = email;
+        if (password) user.password = await bcrypt.hash(password, 10);
+        if (picture) user.picture = picture;
+
+        console.log("✏️ Usuário após edição antes de salvar:", user);
+
+        await user.save();
+
+        console.log("✅ Usuário salvo no MongoDB:", user);
+
         res.json({ status: "success", message: "Perfil atualizado com sucesso!", user });
     } catch (error) {
-        console.error("Erro ao editar perfil:", error);
-        res.status(500).json({ status: "error", message: "Erro ao editar perfil" });
+        console.error("❌ Erro ao atualizar perfil:", error);
+        res.status(500).json({ status: "error", message: "Erro ao atualizar perfil" });
     }
 });
+
+
+
+
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 
 
 
@@ -114,28 +152,36 @@ app.post("/login", async (req, res) => {
 });
 
 
-app.put("/edit-profile/:id", async (req, res) => {
-    const { id } = req.params;
-    const { nickname, email, password } = req.body;
 
-    try {
-        const user = await User.findById(id);
-        if (!user) {
-            return res.status(404).json({ status: "error", message: "Usuário não encontrado" });
-        }
+// para criar um id para login com google
+// app.post("/add-user", async (req, res) => {
+//     const { nickname, email } = req.body;
 
-        // Atualizar dados permitidos
-        if (nickname) user.nickname = nickname;
-        if (email) user.email = email;
-        if (password) user.password = await bcrypt.hash(password, 10); // Criptografar nova senha
+//     try {
+//         const newUser = new User({
+//             nickname,
+//             email
+//         });
 
-        await user.save(); // Salvar alterações no banco
+//         await newUser.save();
 
-        res.json({ status: "success", message: "Perfil atualizado com sucesso!", user });
-    } catch (error) {
-        res.status(500).json({ status: "error", message: "Erro ao atualizar perfil" });
-    }
-});
+//         console.log("✅ Novo usuário criado:", newUser);
+
+//         res.json({ status: "success", user: newUser });
+//     } catch (error) {
+//         console.error("❌ Erro ao criar usuário:", error);
+//         res.status(500).json({ status: "error", message: "Erro ao criar usuário" });
+//     }
+// });
+
+//acessar o id gerado
+// axios.post("http://localhost:5000/add-user", { nickname, email })
+//     .then(res => {
+//         console.log("Usuário criado com ID:", res.data.user._id);
+//     })
+//     .catch(err => {
+//         console.error("Erro ao criar usuário:", err);
+//     });
 
 
 app.post("/validate-token", async (req, res) => {

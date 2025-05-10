@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 const EditProfile = () => {
     const navigate = useNavigate();
-    const { id } = useParams(); // Obtém ID da URL
+    const { id } = useParams();
     const [user, setUser] = useState({ nickname: "", email: "" });
     const [password, setPassword] = useState("");
     const token = localStorage.getItem("token");
@@ -23,7 +23,7 @@ const EditProfile = () => {
 
     axios.get(`http://localhost:5000/user/${id}`)
         .then(res => {
-            console.log("Usuário recebido do backend:", res.data); // Depuração
+            console.log("Usuário recebido do backend:", res.data); 
             setUser(res.data);
         })
         .catch(err => {
@@ -34,60 +34,83 @@ const EditProfile = () => {
 
 
     const handleUpdate = async (e) => {
-        e.preventDefault();
+    e.preventDefault();
 
-        console.log("ID do usuário antes da atualização:", id); // Depuração
+    if (!id) {
+        alert("Erro: ID do usuário não encontrado!");
+        return;
+    }
 
-        if (!id) {
-            alert("Erro: ID do usuário não encontrado!");
-            return;
+    try {
+        const formData = new FormData();
+        formData.append("nickname", user.nickname);
+        formData.append("email", user.email);
+        formData.append("password", password);
+
+        if (user.picture && user.picture instanceof File) { // Garante que é um arquivo
+            formData.append("picture", user.picture);
         }
 
-        try {
-            await axios.put(`http://localhost:5000/edit-profile/${id}`, {
-                nickname: user.nickname,
-                email: user.email,
-                password
-            }, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.put(`http://localhost:5000/edit-profile/${id}`, formData, { 
+            headers: { 
+                Authorization: `Bearer ${token}`, 
+                "Content-Type": "multipart/form-data" 
+            } 
+        });
 
-            alert("Perfil atualizado com sucesso!");
-            navigate("/profile");
-        } catch (error) {
-            console.error("Erro ao atualizar perfil:", error);
-            alert("Erro ao atualizar perfil");
-        }
-    };
+        alert("Perfil atualizado com sucesso!");
+        navigate("/profile");
+    } catch (error) {
+        console.error("Erro ao atualizar perfil:", error.response?.data || error.message);
+        alert("Erro ao atualizar perfil");
+    }
+};
+
+
+
+
+
+    
 
     return (
         <div>
             <h2>Editar Perfil</h2>
             <form onSubmit={handleUpdate}>
-                <label>
-                    Nickname:
-                    <input 
-                        type="text" 
-                        value={user.nickname} 
-                        onChange={(e) => setUser({ ...user, nickname: e.target.value })} 
-                    />
-                </label>
-                <label>
-                    Email:
-                    <input 
-                        type="email" 
-                        value={user.email} 
-                        onChange={(e) => setUser({ ...user, email: e.target.value })} 
-                    />
-                </label>
-                <label>
-                    Nova Senha:
-                    <input 
-                        type="password" 
-                        value={password} 
-                        onChange={(e) => setPassword(e.target.value)} 
-                    />
-                </label>
-                <button type="submit">Salvar Alterações</button>
-            </form>
+    <label>
+        Nickname:
+        <input 
+            type="text" 
+            value={user.nickname} 
+            onChange={(e) => setUser({ ...user, nickname: e.target.value })} 
+        />
+    </label>
+    <label>
+        Email:
+        <input 
+            type="email" 
+            value={user.email} 
+            onChange={(e) => setUser({ ...user, email: e.target.value })} 
+        />
+    </label>
+    <label>
+        Nova Senha:
+        <input 
+            type="password" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+        />
+    </label>
+    <label>
+    Foto de Perfil:
+    <input 
+        type="file" 
+        onChange={(e) => setUser({ ...user, picture: e.target.files[0] })} 
+    />
+</label>
+
+    <button type="submit">Salvar Alterações</button>
+    <Link to={"/profile"}>Cancelar</Link>
+</form>
         </div>
     );
 };

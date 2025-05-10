@@ -22,7 +22,7 @@ export default function Header() {
         navigate(`/edit-profile/${user._id}`);
     } else {
         alert("Erro: Usuário não encontrado!");
-        navigate("/login"); // redirecione para o login em vez de tentar usar user._id
+        navigate("/login");
     }
 };
 
@@ -46,13 +46,12 @@ export default function Header() {
                     </LogoInvestMax>
                     <Logos>
                         <Logos_img>
-                            {/* <img src={user.picture && <img src={user.picture}></img>} alt="Foto do perfil" /> */}
-                            {user.picture && <img src={user.picture} alt="Foto do perfil" />}
-<p>{user.nickname || user.name}</p>
+                            {user.picture && (<img src={user.sub ? user.picture : `http://localhost:5000${user.picture}`} alt="Foto do perfil" />
+)}
+                            <p>{user.nickname || user.name}</p>
                         </Logos_img>
                         <button onClick={handleLogout}>Sair</button>
-                        <button onClick={HandleNavigate}>Editar</button>
-
+                        {user && !user.sub && <button onClick={HandleNavigate}>Editar</button>}
                     </Logos>
                 </Cabecalho>
             ) : (
